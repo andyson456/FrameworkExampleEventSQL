@@ -44,5 +44,67 @@ namespace EventTestClasses
 			Console.WriteLine(prod.ToString());
 			Assert.Greater(prod.ToString().Length, 1);
 		}
+
+		[Test]
+		public void TestUpdate()
+		{
+			Product prod = new Product(1, dataSource);
+			prod.Description = "Description";
+			prod.Save();
+
+			prod = new Product(1, dataSource);
+			Assert.AreEqual(prod.ID, 1);
+			Assert.AreEqual(prod.Description, "Description");
+		}
+
+		[Test]
+		public void TestDelete()
+		{
+			Product prod = new Product(2, dataSource);
+			prod.Delete();
+			prod.Save();
+			Assert.Throws<Exception>(() => new Product(2, dataSource));
+		}
+
+		[Test]
+		public void TestGetList()
+		{
+			Product prod = new Product(dataSource);
+			List<Product> products = (List<Product>)prod.GetList();
+			Assert.AreEqual(16, products.Count);
+			Assert.AreEqual(1, products[0].ID);
+			Assert.AreEqual(56.50, products[0].UnitPrice);
+		}
+
+		[Test]
+		public void TestNoRequiredPropertiesNotSet()
+		{
+			Product prod = new Product(dataSource);
+			Assert.Throws<Exception>(() => prod.Save());
+		}
+
+		[Test]
+		public void TestSomeRequiredPropertiesNotSet()
+		{
+			Product prod = new Product(dataSource);
+			Assert.Throws<Exception>(() => prod.Save());
+			prod.Description = "Description";
+			Assert.Throws<Exception>(() => prod.Save());
+			prod.UnitPrice = 19.25m;
+			Assert.Throws<Exception>(() => prod.Save());
+		}
+
+		[Test]
+		public void TestConcurrencyIssue()
+		{
+			Product prod1 = new Product(1, dataSource);
+			Product prod2 = new Product(1, dataSource);
+
+			prod1.Description = "Updated this first";
+			prod1.Save();
+
+			prod2.Description = "Updated this second";
+			Assert.Throws<Exception>(() => prod2.Save());
+		}
 	}
 }
