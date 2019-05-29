@@ -184,9 +184,51 @@ namespace EventDBClasses
 			}
 		}
 
-		public bool Update(IBaseProps props)
+		public bool Update(IBaseProps p)
 		{
-			throw new NotImplementedException();
+			int rowsAffected = 0;
+			ProductProps props = (ProductProps)p;
+
+			DBCommand command = new DBCommand();
+			command.CommandText = "usp_ProductUpdate";
+			command.CommandType = CommandType.StoredProcedure;
+			command.Parameters.Add("@ProductID", SqlDbType.Int);
+			command.Parameters.Add("@ProductCode", SqlDbType.Char);
+			command.Parameters.Add("@Description", SqlDbType.VarChar);
+			command.Parameters.Add("@UnitPrice", SqlDbType.Money);
+			command.Parameters.Add("@OnHandQuantity", SqlDbType.Int);
+			command.Parameters.Add("@ConcurrencyID", SqlDbType.Int);
+			command.Parameters["@ProductID"].Value = props.ID;
+			command.Parameters["@ProductCode"].Value = props.productcode;
+			command.Parameters["@Description"].Value = props.description;
+			command.Parameters["@UnitPrice"].Value = props.unitprice;
+			command.Parameters["@OnHandQuantity"].Value = props.onhandquantity;
+			command.Parameters["@ConcurrencyID"].Value = props.ConcurrencyID;
+
+			try
+			{
+				rowsAffected = RunNonQueryProcedure(command);
+				if (rowsAffected == 1)
+				{
+					props.ConcurrencyID++;
+					return true;
+				}
+				else
+				{
+					string message = "Record cannot be updated. It has been edited by another user.";
+					throw new Exception(message);
+				}
+			}
+			catch (Exception e)
+			{
+				// log this exception
+				throw;
+			}
+			finally
+			{
+				if (mConnection.State == ConnectionState.Open)
+					mConnection.Close();
+			}
 		}
 	}
 }
